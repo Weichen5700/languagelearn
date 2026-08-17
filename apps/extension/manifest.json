@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "外語沉浸擷取（YouTube）",
+  "version": "0.2.0",
+  "description": "在 YouTube 影片字幕上點擊單字，自動翻譯、查字典、帶語境擷取回本機外語學習網站。",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "src/background.service.js"
+  },
+  "action": {
+    "default_title": "外語沉浸擷取（點擊：開關擷取視窗）"
+  },
+  "options_ui": {
+    "page": "src/popup.html",
+    "open_in_tab": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
+      "js": ["src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {}
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>外語沉浸擷取</title>
+  <style>
+    body { width: 300px; font: 14px/1.45 system-ui, sans-serif; margin: 0; padding: 14px; }
+    h1 { font-size: 15px; margin: 0 0 10px; }
+    label { display: block; margin: 8px 0 2px; font-weight: 600; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #ccc; border-radius: 6px; }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    .toggle { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+    .note { margin: 10px 0 4px; padding: 8px 10px; background: #eef4ff; border: 1px solid #c7d8ff; border-radius: 8px; font-size: 12px; color: #1e3a8a; }
+    .note b { color: #1d4ed8; }
+    .status { margin-top: 10px; font-size: 12px; color: #555; min-height: 16px; }
+    .status.ok { color: #16a34a; }
+    .status.err { color: #dc2626; }
+    button { width: 100%; margin-top: 6px; padding: 7px; border: 0; border-radius: 7px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
+    button.ghost { background: #eee; color: #333; }
+    button.test { background: #0891b2; }
+  </style>
+</head>
+<body>
+  <h1>🎬 外語沉浸擷取</h1>
+
+  <div class="note">
+    🖱️ <b>點擊工具列圖示</b>＝切換擷取視窗（開 / 關），圖示右下角的 <b>ON / OFF</b> 徽章顯示目前狀態。
+    設定請於此頁調整後按「儲存」（此頁可由<b>右鍵圖示 → 選項</b>再次開啟）。
+  </div>
+
+  <div class="status" id="powerStatus"></div>
+
+  <label for="baseUrl">本機學習網站網址</label>
+  <input id="baseUrl" type="text" placeholder="http://localhost:3000" />
+
+  <div class="note">
+    🔑 <b>翻譯 / 字典 / TTS 的 API Key</b> 由本機網站後端託管管理（最安全，Key 不下發前端）。
+    請到 web app 的 <b>設定頁 <code>/settings</code></b> 貼上 <code>GOOGLE_API_KEY</code> 等（加密存於本機，前端看不到明文）；
+    或在 <code>.env.local</code> 設定（兩者皆可，設定頁優先）。
+    擴充套件只負責把查詢送往本機網站的 <code>/api/translate</code>、<code>/api/dictionary</code>、<code>/api/tts</code>。
+  </div>
+
+  <button id="test" class="test">🔌 測試連線</button>
+  <div class="status" id="connStatus"></div>
+
+  <div class="row">
+    <div>
+      <label for="targetLang">字幕語（目標外語）</label>
+      <input id="targetLang" type="text" placeholder="es" />
+    </div>
+    <div>
+      <label for="sourceLang">翻譯成（母語）</label>
+      <input id="sourceLang" type="text" placeholder="zh" />
+    </div>
+  </div>
+
+  <label class="toggle"><input id="enabled" type="checkbox" /> 啟用字幕點擊擷取</label>
+  <label class="toggle"><input id="listeningMode" type="checkbox" /> Listening Mode（模糊字幕）</label>
+  <label class="toggle"><input id="sidebarOpen" type="checkbox" /> 預設展開右側側欄</label>
+  <label class="toggle"><input id="hoverPreview" type="checkbox" /> Hover 即時查詢預覽</label>
+
+  <label for="ytRate">預設播放速度</label>
+  <select id="ytRate">
+    <option value="0.5">0.5×</option>
+    <option value="0.75">0.75×</option>
+    <option value="1">1×（正常）</option>
+    <option value="1.25">1.25×</option>
+    <option value="1.5">1.5×</option>
+    <option value="1.75">1.75×</option>
+    <option value="2">2×</option>
+  </select>
+
+  <div class="status" id="status"></div>
+  <button id="save">儲存</button>
+  <button id="flush" class="ghost">立即補傳暫存</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
