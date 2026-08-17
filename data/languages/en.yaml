@@ -1,0 +1,17 @@
+code: en
+name: English
+nativeName: English
+flag: 🇺🇸
+tts:
+  voices:
+    - { id: en-US-Standard-A, gender: female, provider: google }
+    - { id: en-US-Standard-B, gender: male, provider: google }
+    - { id: en-US, provider: browser }
+  defaultVoice: en-US-Standard-A
+asr:
+  provider: browser
+  lang: en-US
+ipa: true
+direction: ltr
+dictionary:
+  provider: freedict

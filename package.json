@@ -1,0 +1,17 @@
+{
+  "name": "外語學習平台",
+  "version": "1.0.0",
+  "private": true,
+  "description": "通用外語學習網站：計畫 / 單字卡 / 翻譯 / 發音練習（FSRS + 離線優先）",
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
+    "test": "npm --prefix apps/web run test",
+    "test:watch": "npm --prefix apps/web run test:watch",
+    "lint": "npm --prefix apps/web run lint",
+    "e2e": "npm --prefix apps/web run e2e",
+    "check": "npm --prefix apps/web run check",
+    "install:web": "npm --prefix apps/web install"
+  }
+}

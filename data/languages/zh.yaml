@@ -1,0 +1,16 @@
+code: zh
+name: Chinese
+nativeName: 中文
+flag: 🇹🇼
+tts:
+  voices:
+    - { id: cmn-TW-Standard-A, gender: female, provider: google }
+    - { id: zh-TW, provider: browser }
+  defaultVoice: cmn-TW-Standard-A
+asr:
+  provider: browser
+  lang: zh-TW
+ipa: false
+direction: ltr
+dictionary:
+  provider: local

@@ -1,0 +1,18 @@
+code: es
+name: Spanish
+nativeName: Español
+flag: 🇪🇸
+tts:
+  voices:
+    - { id: es-ES-Standard-A, gender: female, provider: google }
+    - { id: es-ES-Standard-B, gender: male, provider: google }
+    - { id: es-ES, provider: browser }
+  defaultVoice: es-ES-Standard-A
+asr:
+  provider: browser
+  lang: es-ES
+ipa: true
+direction: ltr
+dictionary:
+  provider: freedict
+note: 西文拼寫規律，IPA 可選用；性別與動詞變位為主要難點。
