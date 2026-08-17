@@ -5,6 +5,41 @@ import { loadSettings } from "@/lib/store/settings";
 import type { Card } from "@/lib/schemas";
 import type { CaptureEntry } from "./staging";
 
+interface DictShape {
+  ipa?: string;
+  partOfSpeech?: string;
+  definitions?: string[];
+  examples?: { text: string; translation?: string }[];
+  dictExamples?: string[];
+}
+
+/** 把擴充傳回的自由形態 dictionaryEntry 正規化成卡片欄位（容錯）。 */
+function normalizeDictionaryEntry(raw: unknown): {
+  ipa?: string;
+  partOfSpeech?: string;
+  definitions?: string[];
+  dictExamples?: string[];
+} {
+  if (!raw || typeof raw !== "object") return {};
+  const d = raw as DictShape;
+  const ipa = typeof d.ipa === "string" && d.ipa.trim() ? d.ipa.trim() : undefined;
+  const partOfSpeech = typeof d.partOfSpeech === "string" && d.partOfSpeech.trim() ? d.partOfSpeech.trim() : undefined;
+  const definitions = Array.isArray(d.definitions)
+    ? d.definitions.filter((x): x is string => typeof x === "string" && !!x.trim()).slice(0, 5)
+    : undefined;
+  const dictExamples = Array.isArray(d.examples)
+    ? d.examples.map((x) => x?.text).filter((x): x is string => typeof x === "string" && !!x.trim()).slice(0, 3)
+    : Array.isArray(d.dictExamples)
+      ? d.dictExamples.filter((x): x is string => typeof x === "string" && !!x.trim()).slice(0, 3)
+      : undefined;
+  const out: Record<string, unknown> = {};
+  if (ipa) out.ipa = ipa;
+  if (partOfSpeech) out.partOfSpeech = partOfSpeech;
+  if (definitions?.length) out.definitions = definitions;
+  if (dictExamples?.length) out.dictExamples = dictExamples;
+  return out;
+}
+
 /** dataURL（如 data:image/jpeg;base64,...）轉 Blob；格式無效回 null（不拋錯）。 */
 function dataUrlToBlob(dataUrl: string): Blob | null {
   try {
@@ -101,6 +136,9 @@ export async function mergeCaptureToCard(entry: CaptureEntry): Promise<MergeResu
     };
     if (isScenario) context.lines = entry.scenario;
 
+    // 字典資訊（詞性 / IPA / 釋義 / 例句）—擴充查詢時一併帶回，存進卡片
+    const dict = normalizeDictionaryEntry(entry.dictionaryEntry);
+
     const card: Card = {
       id: `imm-${entry.id}`,
       deckId,
@@ -108,6 +146,10 @@ export async function mergeCaptureToCard(entry: CaptureEntry): Promise<MergeResu
       cardType: "immersion",
       front: isScenario ? `🎬 情境 · ${entry.scenario!.length} 句` : entry.word,
       back: isScenario ? (exampleTranslation ?? "") : (entry.translation ?? ""),
+      ipa: dict.ipa,
+      partOfSpeech: dict.partOfSpeech,
+      definitions: dict.definitions,
+      dictExamples: dict.dictExamples,
       example: isScenario ? joinedLines : entry.sentence,
       exampleTranslation,
       context,

@@ -33,6 +33,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
   const [toast, setToast] = useState<{ msg: string; kind: "info" | "error" } | null>(null);
   const [showReplay, setShowReplay] = useState(false);
   const [imgUrl, setImgUrl] = useState<string | null>(null);
+  const [zoomImg, setZoomImg] = useState<string | null>(null);
 
   function flashToast(msg: string, kind: "info" | "error" = "info") {
     setToast({ msg, kind });
@@ -184,7 +185,15 @@ export default function ReviewSession({ deckId, onExit }: Props) {
           {!flipped ? (
             <>
               <div className="text-4xl font-extrabold mb-3 text-center">{current.front}</div>
-              {current.ipa && <div className="text-[var(--text-muted)] text-lg">{current.ipa}</div>}
+              {current.ipa && <div className="text-[var(--text-muted)] text-lg">/{current.ipa}/</div>}
+              {current.partOfSpeech && (
+                <div className="text-xs text-[var(--accent-blue)] font-bold italic mt-1">{current.partOfSpeech}</div>
+              )}
+              {current.definitions && current.definitions.length > 0 && (
+                <ul className="mt-2 text-sm text-[var(--text-muted)] list-disc pl-5 text-left max-w-md">
+                  {current.definitions.slice(0, 3).map((d, i) => <li key={i}>{d}</li>)}
+                </ul>
+              )}
               {current.cardType === "cloze" && current.clozeText && (
                 <div className="text-[var(--text)] mt-3 text-center">{current.clozeText}</div>
               )}
@@ -195,6 +204,15 @@ export default function ReviewSession({ deckId, onExit }: Props) {
               >
                 {speaking ? "🔊…" : "🔊 發音 (s)"}
               </button>
+              {current.example && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); speak(current.example); }}
+                  disabled={speaking}
+                  className="btn btn-ghost mt-2 px-3 py-1.5 text-sm"
+                >
+                  {speaking ? "🔊…" : "🔊 整句發音"}
+                </button>
+              )}
               {current.context && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowReplay(v => !v); }}
@@ -228,6 +246,11 @@ export default function ReviewSession({ deckId, onExit }: Props) {
                   )}
                 </div>
               )}
+              {current.dictExamples && current.dictExamples.length > 0 && (
+                <div className="mt-3 text-center text-xs text-[var(--text-muted)] space-y-0.5">
+                  {current.dictExamples.slice(0, 2).map((ex, i) => <div key={i} className="italic">字典例：{ex}</div>)}
+                </div>
+              )}
               <div className="flex gap-1 mt-4 flex-wrap justify-center">
                 {current.tags.map(t => (
                   <span key={t} className="chip" style={{ background: "var(--brand-light)", color: "var(--brand-dark)" }}>#{t}</span>
@@ -240,6 +263,15 @@ export default function ReviewSession({ deckId, onExit }: Props) {
               >
                 {speaking ? "🔊…" : "🔊 重聽發音 (s)"}
               </button>
+              {current.example && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); speak(current.example); }}
+                  disabled={speaking}
+                  className="btn btn-ghost mt-2 px-3 py-1.5 text-sm"
+                >
+                  {speaking ? "🔊…" : "🔊 整句發音"}
+                </button>
+              )}
               {current.context && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowReplay(v => !v); }}
@@ -258,11 +290,20 @@ export default function ReviewSession({ deckId, onExit }: Props) {
             {imgUrl && (
               <img
                 src={imgUrl}
-                alt="擷取當下的影片影格"
-                className="w-full rounded-2xl border-2 border-[var(--border)]"
+                alt="擷取當下的影片影格（點擊放大）"
+                onClick={() => setZoomImg(imgUrl)}
+                className="w-full rounded-2xl border-2 border-[var(--border)] cursor-zoom-in hover:opacity-85 transition-opacity"
               />
             )}
-            <YouTubePlayer videoId={current.context.videoId} startSec={current.context.startSec} />
+            <YouTubePlayer
+              videoId={current.context.videoId}
+              startSec={current.context.startSec}
+              endSec={
+                current.context.lines && current.context.lines.length > 1
+                  ? current.context.lines[current.context.lines.length - 1].startSec + 4
+                  : undefined
+              }
+            />
           </div>
         )}
 
@@ -290,6 +331,22 @@ export default function ReviewSession({ deckId, onExit }: Props) {
           <TtsSpeedControl compact />
         </div>
       </div>
+
+      {/* 截圖放大 lightbox */}
+      {zoomImg && (
+        <div
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-6 z-50 cursor-zoom-out"
+          onClick={() => setZoomImg(null)}
+        >
+          <img src={zoomImg} alt="放大截圖" className="max-w-[92vw] max-h-[88vh] rounded-2xl border border-white/20 shadow-2xl" />
+          <button
+            onClick={() => setZoomImg(null)}
+            className="absolute top-5 right-6 w-10 h-10 rounded-full bg-white/15 text-white text-2xl flex items-center justify-center hover:bg-white/25"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

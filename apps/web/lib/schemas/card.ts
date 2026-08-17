@@ -39,6 +39,9 @@ export const CardSchema = z.object({
   front: z.string(),
   back: z.string(),
   ipa: z.string().optional(),
+  partOfSpeech: z.string().optional(),        // 字典詞性（名詞/動詞/形容詞…）
+  definitions: z.array(z.string()).optional(), // 字典釋義
+  dictExamples: z.array(z.string()).optional(),// 字典例句（與擷取句 example 區別）
   example: z.string().optional(),
   exampleTranslation: z.string().optional(),  // 例句的母語譯文（雙語對照）
   clozeText: z.string().optional(),

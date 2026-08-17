@@ -1,5 +1,6 @@
 export interface DictResult {
   word: string;
+  ipa?: string;
   partOfSpeech?: string;
   definitions: string[];
   examples?: { text: string; translation?: string }[];

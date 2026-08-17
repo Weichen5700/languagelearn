@@ -98,8 +98,9 @@ export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onC
     try {
       const entry = await lookupWord(front.trim(), targetLang);
       if (!entry) { setHint("⚠ 字典查無此字"); return; }
+      if (entry.ipa && !ipa) setIpa(entry.ipa);
       if (entry.examples?.[0]?.text && !example) setExample(entry.examples[0].text);
-      setHint(`✓ ${entry.word}${entry.partOfSpeech ? ` (${entry.partOfSpeech})` : ""} · ${entry.definitions.length} 條釋義`);
+      setHint(`✓ ${entry.word}${entry.partOfSpeech ? ` (${entry.partOfSpeech})` : ""} · ${entry.definitions.length} 條釋義${entry.ipa ? ` · /${entry.ipa}/` : ""}`);
     } catch (err) {
       setHint(`❌ 查字典失敗：${err instanceof Error ? err.message : err}`);
     } finally {
@@ -120,6 +121,9 @@ export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onC
       front: front.trim(),
       back: back.trim(),
       ipa: ipa.trim() || undefined,
+      partOfSpeech: initial?.partOfSpeech,
+      definitions: initial?.definitions,
+      dictExamples: initial?.dictExamples,
       example: example.trim() || undefined,
       exampleTranslation: exampleTranslation.trim() || undefined,
       clozeText: cardType === "cloze" ? clozeText.trim() || undefined : undefined,

@@ -35,6 +35,7 @@ export default function LibraryPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [filterVideo, setFilterVideo] = useState<string | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [zoomImg, setZoomImg] = useState<string | null>(null);
 
   async function refresh() {
     const [cs, ds] = await Promise.all([listCards(), listDecks()]);
@@ -138,16 +139,35 @@ export default function LibraryPage() {
             {videoCards.map(c => (
               <div key={c.id} className="border rounded-2xl p-3 flex gap-3">
                 {thumbs[c.id] ? (
-                  <img src={thumbs[c.id]} alt="截圖" className="w-28 aspect-video object-cover rounded-lg shrink-0" />
+                  <img
+                    src={thumbs[c.id]}
+                    alt="截圖（點擊放大）"
+                    onClick={() => setZoomImg(thumbs[c.id]!)}
+                    className="w-28 aspect-video object-cover rounded-lg shrink-0 cursor-zoom-in hover:opacity-80 transition-opacity"
+                  />
                 ) : (
                   <div className="w-28 aspect-video bg-gray-100 rounded-lg shrink-0 flex items-center justify-center text-2xl">🎬</div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-xl font-extrabold">{c.front}</span>
+                    {c.ipa && <span className="text-sm text-[var(--accent-orange)] font-semibold">/{c.ipa}/</span>}
+                    {c.partOfSpeech && (
+                      <span className="chip" style={{ background: "var(--brand-light)", color: "var(--brand-dark)" }}>{c.partOfSpeech}</span>
+                    )}
                     <span className="text-[var(--text-muted)]">→</span>
                     <span className="text-lg font-bold text-[var(--brand-dark)]">{c.back || "（無譯文）"}</span>
                   </div>
+                  {c.definitions && c.definitions.length > 0 && (
+                    <ul className="mt-1 text-sm text-[var(--text-muted)] list-disc pl-5">
+                      {c.definitions.slice(0, 3).map((d, i) => <li key={i}>{d}</li>)}
+                    </ul>
+                  )}
+                  {c.dictExamples && c.dictExamples.length > 0 && (
+                    <div className="mt-1 text-xs italic text-[var(--text-muted)] space-y-0.5">
+                      {c.dictExamples.slice(0, 2).map((ex, i) => <div key={i}>例：{ex}</div>)}
+                    </div>
+                  )}
                   {c.example && (
                     <div className="mt-1">
                       <div className="text-sm italic">"{c.example}"</div>
@@ -169,6 +189,22 @@ export default function LibraryPage() {
           </div>
         )}
       </section>
+
+      {/* 截圖放大 lightbox */}
+      {zoomImg && (
+        <div
+          className="fixed inset-0 bg-black/85 flex items-center justify-center p-6 z-50 cursor-zoom-out"
+          onClick={() => setZoomImg(null)}
+        >
+          <img src={zoomImg} alt="放大截圖" className="max-w-[92vw] max-h-[88vh] rounded-2xl border border-white/20 shadow-2xl" />
+          <button
+            onClick={() => setZoomImg(null)}
+            className="absolute top-5 right-6 w-10 h-10 rounded-full bg-white/15 text-white text-2xl flex items-center justify-center hover:bg-white/25"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </main>
   );
 }
