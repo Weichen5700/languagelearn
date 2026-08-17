@@ -12,6 +12,7 @@ const NAV = [
   { href: "/plans", label: "計畫", emoji: "📅" },
   { href: "/pronunciation", label: "發音", emoji: "🎤" },
   { href: "/stats", label: "統計", emoji: "📊" },
+  { href: "/settings", label: "設定", emoji: "⚙️" },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

@@ -1,0 +1,2 @@
+# API key 加密存放（後端託管，使用者於 /settings UI 貼入；不入庫）
+/.keys/

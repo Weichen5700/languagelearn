@@ -1,4 +1,5 @@
 import type { LangCode } from "@/lib/i18n/languages";
+import { getKey } from "@/lib/keys/store";
 
 export interface TtsProvider {
   name: string;
@@ -34,8 +35,8 @@ export class BrowserTtsProvider implements TtsProvider {
   }
 }
 
-export function resolveTtsProvider(): TtsProvider {
-  const key = process.env.GOOGLE_API_KEY;
+export async function resolveTtsProvider(): Promise<TtsProvider> {
+  const key = (await getKey("GOOGLE_API_KEY")) ?? process.env.GOOGLE_API_KEY;
   if (key && key.length > 0) return new GoogleTtsProvider(key);
   return new BrowserTtsProvider();
 }

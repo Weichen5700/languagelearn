@@ -1,4 +1,5 @@
 import type { LangCode } from "@/lib/i18n/languages";
+import { getKey } from "@/lib/keys/store";
 
 export interface TranslateProvider {
   name: string;
@@ -38,8 +39,9 @@ export class LibreTranslateProvider implements TranslateProvider {
   }
 }
 
-export function resolveTranslateProvider(): TranslateProvider {
-  const key = process.env.GOOGLE_API_KEY;
+export async function resolveTranslateProvider(): Promise<TranslateProvider> {
+  const key = (await getKey("GOOGLE_API_KEY")) ?? process.env.GOOGLE_API_KEY;
   if (key && key.length > 0) return new GoogleTranslateProvider(key);
-  return new LibreTranslateProvider(process.env.LIBRETRANSLATE_ENDPOINT);
+  const endpoint = (await getKey("LIBRETRANSLATE_ENDPOINT")) ?? process.env.LIBRETRANSLATE_ENDPOINT;
+  return new LibreTranslateProvider(endpoint);
 }
