@@ -14,12 +14,13 @@ interface Props {
   onExit: () => void;
 }
 
-const RATING_BUTTONS: { r: Rating; label: string; key: string; color: string }[] = [
-  { r: 1, label: "Again", key: "1", color: "bg-red-500" },
-  { r: 2, label: "Hard", key: "2", color: "bg-orange-500" },
-  { r: 3, label: "Good", key: "3", color: "bg-green-500" },
-  { r: 4, label: "Easy", key: "4", color: "bg-blue-500" },
+const RATING_BUTTONS: { r: Rating; label: string; sub: string; key: string; color: string }[] = [
+  { r: 1, label: "Again", sub: "忘記/重來", key: "1", color: "var(--rate-again)" },
+  { r: 2, label: "Hard", sub: "生疏/困難", key: "2", color: "var(--rate-hard)" },
+  { r: 3, label: "Good", sub: "記得/良好", key: "3", color: "var(--rate-good)" },
+  { r: 4, label: "Easy", sub: "熟悉/簡單", key: "4", color: "var(--rate-easy)" },
 ];
+
 
 export default function ReviewSession({ deckId, onExit }: Props) {
   const [queue, setQueue] = useState<Card[]>([]);
@@ -307,27 +308,37 @@ export default function ReviewSession({ deckId, onExit }: Props) {
           </div>
         )}
 
-        {/* 評分按鈕 */}
-        <div className="grid grid-cols-4 gap-2 mt-6">
-          {RATING_BUTTONS.map(b => (
-            <button
-              key={b.r}
-              onClick={() => rate(b.r)}
-              disabled={!flipped}
-              className="btn text-white py-3 disabled:opacity-30"
-              style={{ background: b.color }}
-            >
-              <div className="font-extrabold">{b.label}</div>
-              <div className="text-xs opacity-80">[{b.key}]</div>
-            </button>
-          ))}
-        </div>
+        {/* 翻面提示或評分按鈕 */}
+        {!flipped ? (
+          <div
+            onClick={() => setFlipped(true)}
+            className="card p-4 mt-6 text-center text-sm font-bold text-[var(--accent-blue)] bg-blue-50/70 border-2 border-blue-200 cursor-pointer hover:bg-blue-100/70 transition-colors animate-pop flex items-center justify-center gap-2"
+          >
+            <span>💡</span>
+            <span>點擊卡片或按 <kbd className="px-2 py-0.5 bg-white border rounded shadow-xs font-mono text-xs">Space</kbd> 翻開卡片以進行評分</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2.5 mt-6 animate-pop">
+            {RATING_BUTTONS.map(b => (
+              <button
+                key={b.r}
+                onClick={() => rate(b.r)}
+                className="btn text-white py-2.5 flex flex-col items-center justify-center transition-transform hover:scale-102 active:scale-95"
+                style={{ background: b.color }}
+              >
+                <div className="font-black text-base">{b.label}</div>
+                <div className="text-[11px] opacity-90 font-medium">{b.sub}</div>
+                <div className="text-[10px] opacity-75 font-mono">[{b.key}]</div>
+              </button>
+            ))}
+          </div>
+        )}
 
-        <div className="flex justify-between mt-4 text-xs text-[var(--text-muted)]">
-          <button onClick={undo} disabled={history.length === 0} className="btn-ghost btn px-3 py-1 text-xs disabled:opacity-30">↩ 復原 (u)</button>
-          <span className="self-center">Space 翻卡 · s 發音 · 1-4 評分 · u 復原 · Esc 離開</span>
-        </div>
-        <div className="flex justify-center mt-3">
+        <div className="flex justify-between items-center mt-4 text-xs text-[var(--text-muted)]">
+          <button onClick={undo} disabled={history.length === 0} className="btn-ghost btn px-3 py-1 text-xs disabled:opacity-30">
+            ↩ 復原 (u)
+          </button>
+          <span className="self-center hidden sm:inline">Space 翻面 · 1-4 評分 · s 朗讀 · u 復原 · Esc 退出</span>
           <TtsSpeedControl compact />
         </div>
       </div>

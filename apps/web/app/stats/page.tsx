@@ -103,33 +103,42 @@ export default function StatsPage() {
 
       {/* 總覽數字 */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        <Stat label="🃏 總卡片" value={String(stats.totalCards)} />
-        <Stat label="📌 今日到期" value={String(stats.dueToday)} highlight />
+        <Stat label="🃏 總單字卡" value={String(stats.totalCards)} />
+        <Stat label="📌 今日待複習" value={String(stats.dueToday)} highlight={stats.dueToday > 0} />
         <Stat label="✅ 累計複習" value={String(stats.totalReviews)} />
-        <Stat label="🔥 連續天數" value={`${stats.streak} 天`} />
+        <Stat label="🔥 連續學習" value={`${stats.streak} 天`} />
         <Stat label="⏱ 總學習時長" value={formatDuration(stats.totalTimeSpentMs)} />
-        <Stat label="📅 上次複習" value={stats.lastReviewDate ?? "—"} />
-        <Stat label="🎬 沉浸卡" value={`${stats.immersionCards}${stats.totalCards ? ` (${Math.round(stats.immersionCards / stats.totalCards * 100)}%)` : ""}`} />
+        <Stat label="📅 上次複習" value={stats.lastReviewDate ?? "尚未開始"} />
+        <Stat label="🎬 影片沉浸卡" value={`${stats.immersionCards}${stats.totalCards ? ` (${Math.round(stats.immersionCards / stats.totalCards * 100)}%)` : ""}`} />
       </section>
 
       {/* 沉浸式學習來源占比 */}
       {stats.immersionCards > 0 && (
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">沉浸式學習占比</h2>
-          <div className="flex items-center gap-2">
-            <div className="w-24 text-sm">🎬 影片擷取</div>
-            <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-              <div className="bg-purple-500 h-5" style={{ width: `${Math.round(stats.immersionCards / (stats.totalCards || 1) * 100)}%` }} />
+        <section className="card p-5 mb-8 border-2 border-[var(--border)]">
+          <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+            <span>🎬</span> 沉浸式語境卡片占比
+          </h2>
+          <div className="flex items-center gap-3">
+            <div className="w-24 text-xs font-bold text-purple-900">YouTube 擷取</div>
+            <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
+              <div className="bg-purple-500 h-4 rounded-full transition-all" style={{ width: `${Math.round(stats.immersionCards / (stats.totalCards || 1) * 100)}%` }} />
             </div>
-            <div className="w-20 text-sm text-right">{stats.immersionCards} / {stats.totalCards}</div>
+            <div className="w-20 text-xs font-bold text-right text-purple-700">{stats.immersionCards} / {stats.totalCards}</div>
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-2">從 YouTube 字幕點擊擷取、帶語境的單字卡占比。</p>
+          <p className="text-xs text-[var(--text-muted)] mt-2">
+            從 YouTube 雙語字幕點擊自動收錄、帶時間軸原聲與影格截圖的單字卡比例。
+          </p>
         </section>
       )}
 
       {/* 熱力圖 */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3">複習熱力圖（最近 12 週）</h2>
+      <section className="card p-5 mb-8 border-2 border-[var(--border)]">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <span>🗓</span> 學習熱力圖（最近 12 週）
+          </h2>
+          <span className="text-xs text-[var(--text-muted)]">每日持續練習累積記憶</span>
+        </div>
         <div className="flex gap-1 overflow-x-auto pb-2">
           {weeks.map((col, wi) => (
             <div key={wi} className="flex flex-col gap-1">
@@ -137,37 +146,39 @@ export default function StatsPage() {
                 <div
                   key={di}
                   title={`${d.date}: ${d.count} 次`}
-                  className={`w-3 h-3 rounded-sm heat-cell ${heatColor(d.count)}`}
+                  className={`w-3.5 h-3.5 rounded-sm heat-cell ${heatColor(d.count)}`}
                 />
               ))}
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-2">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-3">
           <span>少</span>
-          <div className="w-3 h-3 rounded-sm bg-gray-100" />
-          <div className="w-3 h-3 rounded-sm bg-green-200" />
-          <div className="w-3 h-3 rounded-sm bg-green-400" />
-          <div className="w-3 h-3 rounded-sm bg-green-600" />
-          <div className="w-3 h-3 rounded-sm bg-green-800" />
+          <div className="w-3.5 h-3.5 rounded-sm bg-gray-100 border border-gray-200" />
+          <div className="w-3.5 h-3.5 rounded-sm bg-green-200" />
+          <div className="w-3.5 h-3.5 rounded-sm bg-green-400" />
+          <div className="w-3.5 h-3.5 rounded-sm bg-green-600" />
+          <div className="w-3.5 h-3.5 rounded-sm bg-green-800" />
           <span>多</span>
         </div>
       </section>
 
       {/* 卡片狀態分布 */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3">卡片熟練度分布</h2>
-        <div className="space-y-2">
+      <section className="card p-5 mb-8 border-2 border-[var(--border)]">
+        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+          <span>🧠</span> FSRS 記憶模型熟練度分布
+        </h2>
+        <div className="space-y-3">
           {(Object.keys(STATE_COLORS) as (keyof StateDistribution)[]).map(k => {
             const v = stats.stateDist[k];
             const pct = Math.round((v / totalStates) * 100);
             return (
-              <div key={k} className="flex items-center gap-2">
-                <div className="w-20 text-sm">{STATE_LABELS[k]}</div>
-                <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-                  <div className={`${STATE_COLORS[k]} h-5`} style={{ width: `${pct}%` }} />
+              <div key={k} className="flex items-center gap-3">
+                <div className="w-20 text-xs font-bold text-gray-700">{STATE_LABELS[k]}</div>
+                <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200">
+                  <div className={`${STATE_COLORS[k]} h-4 rounded-full transition-all`} style={{ width: `${pct}%` }} />
                 </div>
-                <div className="w-16 text-sm text-right">{v} ({pct}%)</div>
+                <div className="w-20 text-xs font-bold text-right text-gray-700">{v} ({pct}%)</div>
               </div>
             );
           })}
@@ -175,15 +186,20 @@ export default function StatsPage() {
       </section>
 
       {/* 每日學習時長（最近 14 天） */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3">每日學習時長（最近 14 天）</h2>
-        <div className="flex items-end gap-1 h-32">
+      <section className="card p-5 mb-8 border-2 border-[var(--border)]">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <span>⏱</span> 每日學習時長（最近 14 天）
+          </h2>
+          <span className="text-xs text-[var(--text-muted)]">實際翻卡與答題耗時</span>
+        </div>
+        <div className="flex items-end gap-1.5 h-32 pt-4">
           {stats.daily.slice(-14).map((d, i) => {
             const maxMs = Math.max(1, ...stats.daily.slice(-14).map(x => x.timeSpentMs));
             const h = Math.round((d.timeSpentMs / maxMs) * 100);
             return (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end" title={`${d.date}: ${formatDuration(d.timeSpentMs)}`}>
-                <div className="w-full bg-blue-500 rounded-t" style={{ height: `${h}%`, minHeight: d.timeSpentMs > 0 ? 2 : 0 }} />
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${d.date}: ${formatDuration(d.timeSpentMs)}`}>
+                <div className="w-full bg-[var(--brand)] rounded-t-md transition-all hover:bg-[var(--brand-dark)]" style={{ height: `${h}%`, minHeight: d.timeSpentMs > 0 ? 4 : 0 }} />
               </div>
             );
           })}
@@ -191,15 +207,21 @@ export default function StatsPage() {
       </section>
 
       {/* 備份（同步的 MVP 形式） */}
-      <section className="border-t pt-6">
-        <h2 className="text-xl font-semibold mb-2">資料備份</h2>
-        <p className="text-sm text-gray-600 mb-3">
-          雲端同步為未來工作（NextAuth + Postgres）。目前以 JSON 匯出/匯入實現可攜帶性：
-          匯出後可到另一台裝置匯入。
+      <section className="card p-5 border-2 border-[var(--border)]">
+        <h2 className="text-lg font-bold mb-2 flex items-center gap-2">
+          <span>💾</span> 資料可攜備份與還原
+        </h2>
+        <p className="text-xs text-[var(--text-muted)] mb-4 leading-relaxed">
+          系統採離線優先設計，資料均完整儲存於您的本機 IndexedDB。您可以隨時匯出 JSON 備份檔，
+          以在其他裝置匯入還原，不被平台綁架。
         </p>
-        <div className="flex gap-2">
-          <button onClick={onExport} className="border px-4 py-2 rounded">⬇ 匯出備份</button>
-          <button onClick={() => fileRef.current?.click()} className="border px-4 py-2 rounded">⬆ 匯入備份</button>
+        <div className="flex gap-2.5">
+          <button onClick={onExport} className="btn btn-primary px-4 py-2 text-xs font-bold">
+            ⬇ 匯出完整備份
+          </button>
+          <button onClick={() => fileRef.current?.click()} className="btn btn-ghost px-4 py-2 text-xs font-bold">
+            ⬆ 匯入備份還原
+          </button>
           <input ref={fileRef} type="file" accept="application/json" onChange={onImport} className="hidden" />
         </div>
       </section>
@@ -209,9 +231,9 @@ export default function StatsPage() {
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`border rounded p-3 ${highlight ? "border-blue-500 bg-blue-50" : ""}`}>
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
+    <div className={`card-soft p-4 border-2 transition-all ${highlight ? "border-emerald-300 bg-emerald-50/60 ring-2 ring-emerald-100" : "border-[var(--border)] bg-white"}`}>
+      <div className="text-xs font-bold text-[var(--text-muted)] mb-1">{label}</div>
+      <div className={`text-2xl font-black ${highlight ? "text-emerald-700" : "text-gray-900"}`}>{value}</div>
     </div>
   );
 }

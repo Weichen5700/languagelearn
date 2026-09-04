@@ -110,9 +110,23 @@ body {
 }
 .animate-shake { animation: shake 0.4s ease-in-out; }
 
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 75, 75, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
+}
+.animate-pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
 .heat-cell { transition: transform 0.1s; }
 .heat-cell:hover { transform: scale(1.4); }
+
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
