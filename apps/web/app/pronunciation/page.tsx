@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Card, Deck } from "@/lib/schemas";
 import { listCards, listDecks } from "@/lib/db";
 import { playTts, defaultVoiceFor } from "@/lib/audio/tts";
@@ -16,7 +16,13 @@ interface Result {
   cer: number;
 }
 
+// 瀏覽器能力在 SSR 期間不可知：伺服器端先假定支援，掛載後再校正，
+// 否則「伺服器渲染提示、客戶端不渲染」會造成 hydration 不一致。
+const subscribeNoop = () => () => {};
+const isSupportedOnServer = () => true;
+
 export default function PronunciationPage() {
+  const asrSupported = useSyncExternalStore(subscribeNoop, isAsrSupported, isSupportedOnServer);
   const [cards, setCards] = useState<Card[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckId, setDeckId] = useState("");
@@ -270,7 +276,7 @@ export default function PronunciationPage() {
         </section>
       )}
 
-      {!isAsrSupported() && (
+      {!asrSupported && (
         <div className="card p-4 text-xs text-amber-800 bg-amber-50 border-amber-200">
           💡 提示：目前瀏覽器尚未支援 Web Speech API。建議使用 Chrome 或 Edge 瀏覽器以獲得完整的語音辨識與錄音比對功能。
         </div>

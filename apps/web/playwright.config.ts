@@ -1,7 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// E2E 需先安裝系統函式庫：`sudo npx playwright install-deps chromium`
-// （沙箱無 sudo 時 E2E 無法執行；單元測試已覆蓋 FSRS + 佇列邏輯）
+// E2E 需要 Chromium + 系統函式庫：
+//   sudo npx playwright install --with-deps chromium
+// 若無 sudo，可將 libnspr4 / libnss3 / libasound2 等套件解開後以
+//   LD_LIBRARY_PATH=<解開路徑>/usr/lib/x86_64-linux-gnu npx playwright test
+// 執行（CI 由 .github/workflows/ci.yml 自動安裝相依）。
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30000,
