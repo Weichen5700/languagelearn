@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { loadSettings, saveSettings, type Settings } from "@/lib/store/settings";
+import { useEffect, useState } from "react";
+import { saveSettings, type Settings } from "@/lib/store/settings";
+import { useSettings } from "@/lib/store/hooks";
 
 interface KeyStatus {
   name: string;
@@ -34,35 +35,27 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState<string>("");
   const [testResult, setTestResult] = useState("");
 
-  // 學習偏好設定狀態
-  const [settings, setSettings] = useState<Settings>({
-    sourceLang: "zh",
-    targetLang: "es",
-    newCardsPerDay: 20,
-    reviewsPerDay: 200,
-    requestRetention: 0.9,
-    playbackRate: 1,
-    ytRate: 1,
-  });
+  // 學習偏好設定：以 localStorage 為來源，本地編輯先存 draft，按「儲存」才寫回
+  const storeSettings = useSettings();
+  const [settingsDraft, setSettingsDraft] = useState<Partial<Settings>>({});
+  const settings: Settings = { ...storeSettings, ...settingsDraft };
   const [settingsSavedToast, setSettingsSavedToast] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      const res = await fetch("/api/keys");
-      const data = await res.json();
-      setKeys(data.keys ?? []);
-    } catch {
-      // ignore
-    }
-  }, []);
-
   useEffect(() => {
-    refresh();
-    setSettings(loadSettings());
-  }, [refresh]);
+    void (async () => {
+      try {
+        const res = await fetch("/api/keys");
+        const data = await res.json();
+        setKeys(data.keys ?? []);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   function handleSaveSettings() {
     saveSettings(settings);
+    setSettingsDraft({});
     setSettingsSavedToast(true);
     setTimeout(() => setSettingsSavedToast(false), 2500);
   }
@@ -152,7 +145,7 @@ export default function SettingsPage() {
             <label className="text-xs font-bold text-gray-700 mb-1 block">預設目標外語 (Target)</label>
             <select
               value={settings.targetLang}
-              onChange={e => setSettings({ ...settings, targetLang: e.target.value })}
+              onChange={e => setSettingsDraft({ ...settings, targetLang: e.target.value })}
               className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-bold bg-white"
             >
               {TARGET_LANG_OPTIONS.map(opt => (
@@ -165,7 +158,7 @@ export default function SettingsPage() {
             <label className="text-xs font-bold text-gray-700 mb-1 block">母語 / 釋義語言 (Source)</label>
             <select
               value={settings.sourceLang}
-              onChange={e => setSettings({ ...settings, sourceLang: e.target.value })}
+              onChange={e => setSettingsDraft({ ...settings, sourceLang: e.target.value })}
               className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-bold bg-white"
             >
               {SOURCE_LANG_OPTIONS.map(opt => (
@@ -183,7 +176,7 @@ export default function SettingsPage() {
               min={0}
               max={200}
               value={settings.newCardsPerDay}
-              onChange={e => setSettings({ ...settings, newCardsPerDay: Number(e.target.value) })}
+              onChange={e => setSettingsDraft({ ...settings, newCardsPerDay: Number(e.target.value) })}
               className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-bold bg-white"
             />
             <span className="text-[11px] text-[var(--text-muted)] mt-1 block">建議 15~30 張</span>
@@ -196,7 +189,7 @@ export default function SettingsPage() {
               min={10}
               max={1000}
               value={settings.reviewsPerDay}
-              onChange={e => setSettings({ ...settings, reviewsPerDay: Number(e.target.value) })}
+              onChange={e => setSettingsDraft({ ...settings, reviewsPerDay: Number(e.target.value) })}
               className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-bold bg-white"
             />
             <span className="text-[11px] text-[var(--text-muted)] mt-1 block">避免單日複習過載</span>
@@ -206,7 +199,7 @@ export default function SettingsPage() {
             <label className="text-xs font-bold text-gray-700 mb-1 block">FSRS 目標記憶留存率</label>
             <select
               value={settings.requestRetention}
-              onChange={e => setSettings({ ...settings, requestRetention: Number(e.target.value) })}
+              onChange={e => setSettingsDraft({ ...settings, requestRetention: Number(e.target.value) })}
               className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-bold bg-white"
             >
               <option value={0.85}>85%（複習頻率較低）</option>
@@ -226,7 +219,7 @@ export default function SettingsPage() {
               max={1.5}
               step={0.1}
               value={settings.playbackRate}
-              onChange={e => setSettings({ ...settings, playbackRate: Number(e.target.value) })}
+              onChange={e => setSettingsDraft({ ...settings, playbackRate: Number(e.target.value) })}
               className="w-full cursor-pointer accent-[var(--brand)]"
             />
           </div>
@@ -239,7 +232,7 @@ export default function SettingsPage() {
               max={1.5}
               step={0.1}
               value={settings.ytRate}
-              onChange={e => setSettings({ ...settings, ytRate: Number(e.target.value) })}
+              onChange={e => setSettingsDraft({ ...settings, ytRate: Number(e.target.value) })}
               className="w-full cursor-pointer accent-[var(--brand)]"
             />
           </div>

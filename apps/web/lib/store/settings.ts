@@ -17,16 +17,57 @@ export type Settings = z.infer<typeof SettingsSchema>;
 
 const KEY = "flashcards.settings";
 
-export function loadSettings(): Settings {
-  if (typeof window === "undefined") return SettingsSchema.parse({});
+/** 預設值（模組層級常數：伺服器端 snapshot 需保持參照穩定）。 */
+export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
+
+function parseSettings(raw: string | null): Settings {
   try {
-    const raw = localStorage.getItem(KEY);
     return SettingsSchema.parse(raw ? JSON.parse(raw) : {});
   } catch {
-    return SettingsSchema.parse({});
+    return { ...DEFAULT_SETTINGS };
   }
+}
+
+export function loadSettings(): Settings {
+  if (typeof window === "undefined") return { ...DEFAULT_SETTINGS };
+  return parseSettings(localStorage.getItem(KEY));
 }
 
 export function saveSettings(s: Settings): void {
   localStorage.setItem(KEY, JSON.stringify(s));
+  emit();
+}
+
+/* ---------- React 訂閱（供 useSyncExternalStore 使用） ---------- */
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+export function subscribeSettings(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+function emit(): void {
+  for (const listener of listeners) listener();
+}
+
+let cachedRaw: string | null = null;
+let cached: Settings = DEFAULT_SETTINGS;
+let cachedReady = false;
+
+/** 同一份 localStorage 內容固定回傳同一物件參照（useSyncExternalStore 必要條件）。 */
+export function getSettingsSnapshot(): Settings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  const raw = localStorage.getItem(KEY);
+  if (cachedReady && raw === cachedRaw) return cached;
+  cachedReady = true;
+  cachedRaw = raw;
+  cached = parseSettings(raw);
+  return cached;
+}
+
+/** 首次渲染（SSR / hydration）用：先給預設值，掛載後再切換為本機實際值。 */
+export function getServerSettingsSnapshot(): Settings {
+  return DEFAULT_SETTINGS;
 }

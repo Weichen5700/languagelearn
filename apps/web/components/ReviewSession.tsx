@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { buildReviewQueue, gradeCard } from "@/lib/review/queue";
 import { playTts, defaultVoiceFor } from "@/lib/audio/tts";
 import { getImageBlob } from "@/lib/db";
@@ -32,7 +32,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
   const [history, setHistory] = useState<{ card: Card; rating: Rating }[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: "info" | "error" } | null>(null);
-  const [showReplay, setShowReplay] = useState(false);
+  const [replayIdx, setReplayIdx] = useState<number | null>(null);
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
 
@@ -41,19 +41,23 @@ export default function ReviewSession({ deckId, onExit }: Props) {
     setTimeout(() => setToast(null), 2500);
   }
 
-  const loadQueue = useCallback(async () => {
-    const items = await buildReviewQueue(deckId);
-    setQueue(items.map(i => i.card));
-    setIdx(0);
-    setFlipped(false);
-    setDone(items.length === 0);
-    setCardStart(Date.now());
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const items = await buildReviewQueue(deckId);
+      if (cancelled) return;
+      setQueue(items.map(i => i.card));
+      setIdx(0);
+      setFlipped(false);
+      setDone(items.length === 0);
+      setCardStart(Date.now());
+    })();
+    return () => { cancelled = true; };
   }, [deckId]);
 
-  useEffect(() => { loadQueue(); }, [loadQueue]);
-  useEffect(() => { setShowReplay(false); }, [idx]);
-
   const current = queue[idx];
+  // 換卡即自動收合「重看這句」（衍生值，不需 effect 內 setState）
+  const showReplay = replayIdx === idx;
 
   // 沉浸卡截圖：依 media.imageId 載入 IndexedDB 影格並產生 objectURL
   useEffect(() => {
@@ -216,7 +220,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
               )}
               {current.context && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowReplay(v => !v); }}
+                  onClick={(e) => { e.stopPropagation(); setReplayIdx(p => (p === idx ? null : idx)); }}
                   className="btn btn-ghost mt-2 px-3 py-1.5 text-sm"
                 >
                   ▶ 重看這句（影片 {Math.floor(current.context.startSec / 60)}:{String(current.context.startSec % 60).padStart(2, "0")}）
@@ -232,7 +236,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
                   {current.context.lines.map((l, i) => (
                     <div key={i} className="text-[var(--text)] italic">
                       <span className="text-xs text-[var(--text-muted)] mr-1">{Math.floor(l.startSec / 60)}:{String(l.startSec % 60).padStart(2, "0")}</span>
-                      "{l.text}"
+                      &quot;{l.text}&quot;
                     </div>
                   ))}
                   {current.exampleTranslation && (
@@ -241,9 +245,9 @@ export default function ReviewSession({ deckId, onExit }: Props) {
                 </div>
               ) : current.example && (
                 <div className="mt-3 text-center space-y-1">
-                  <div className="text-[var(--text)] italic">"{current.example}"</div>
+                  <div className="text-[var(--text)] italic">&quot;{current.example}&quot;</div>
                   {current.exampleTranslation && (
-                    <div className="text-[var(--text-muted)] text-sm">"{current.exampleTranslation}"</div>
+                    <div className="text-[var(--text-muted)] text-sm">&quot;{current.exampleTranslation}&quot;</div>
                   )}
                 </div>
               )}
@@ -275,7 +279,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
               )}
               {current.context && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowReplay(v => !v); }}
+                  onClick={(e) => { e.stopPropagation(); setReplayIdx(p => (p === idx ? null : idx)); }}
                   className="btn btn-ghost mt-2 px-3 py-1.5 text-sm"
                 >
                   ▶ 重看這句（{Math.floor(current.context.startSec / 60)}:{String(current.context.startSec % 60).padStart(2, "0")}）
@@ -289,6 +293,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
         {current.context && showReplay && (
           <div className="mt-4 space-y-3">
             {imgUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- IndexedDB blob: objectURL，next/image 無法最佳化
               <img
                 src={imgUrl}
                 alt="擷取當下的影片影格（點擊放大）"
@@ -349,6 +354,7 @@ export default function ReviewSession({ deckId, onExit }: Props) {
           className="fixed inset-0 bg-black/85 flex items-center justify-center p-6 z-50 cursor-zoom-out"
           onClick={() => setZoomImg(null)}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob: objectURL 放大檢視，next/image 無法最佳化 */}
           <img src={zoomImg} alt="放大截圖" className="max-w-[92vw] max-h-[88vh] rounded-2xl border border-white/20 shadow-2xl" />
           <button
             onClick={() => setZoomImg(null)}

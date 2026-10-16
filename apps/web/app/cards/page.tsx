@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import type { Card, Deck } from "@/lib/schemas";
 import { listCards, listDecks, deleteCard, createDeck, deleteDeck } from "@/lib/db";
+import { useNow } from "@/lib/hooks/useNow";
 import CardEditor from "@/components/CardEditor";
 import ReviewSession from "@/components/ReviewSession";
 import { exportAll, importAll } from "@/lib/io/importExport";
@@ -34,9 +35,19 @@ export default function CardsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { refresh(); }, [selectedDeck]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [ds, cs] = await Promise.all([listDecks(), listCards(selectedDeck || undefined)]);
+      if (cancelled) return;
+      setDecks(ds);
+      setCards(cs);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedDeck]);
 
-  const now = Date.now();
+  const now = useNow();
 
   const dueCount = useMemo(() => cards.filter(c => c.srs.due <= now).length, [cards, now]);
   const newCount = useMemo(() => cards.filter(c => c.srs.state === "new").length, [cards]);
@@ -183,7 +194,7 @@ export default function CardsPage() {
             <span className="text-sm font-bold text-[var(--text-muted)]">牌組：</span>
             <select
               value={selectedDeck}
-              onChange={e => setSelectedDeck(e.target.value)}
+              onChange={e => { setLoading(true); setSelectedDeck(e.target.value); }}
               className="border-2 rounded-2xl px-3 py-2 flex-1 font-bold text-sm bg-white"
             >
               <option value="">📚 全部牌組 ({cards.length} 張卡片)</option>
@@ -388,9 +399,9 @@ export default function CardsPage() {
                       {/* 例句預覽 */}
                       {c.example && (
                         <div className="mt-1 text-xs italic text-[var(--text-muted)] bg-gray-50/80 p-2 rounded-xl">
-                          <div>"{c.example}"</div>
+                          <div>&quot;{c.example}&quot;</div>
                           {c.exampleTranslation && (
-                            <div className="text-gray-500 font-normal">"{c.exampleTranslation}"</div>
+                            <div className="text-gray-500 font-normal">&quot;{c.exampleTranslation}&quot;</div>
                           )}
                         </div>
                       )}

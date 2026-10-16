@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { Card, Deck } from "@/lib/schemas";
 import { saveCard } from "@/lib/db";
 import { makeNewCardSrs } from "@/lib/review/queue";
@@ -26,7 +26,7 @@ const CARD_TYPES = [
 ] as const;
 
 export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onCancel }: Props) {
-  const [deckId, setDeckId] = useState(initial?.deckId ?? defaultDeckId ?? decks[0]?.id ?? "");
+  const [deckId, setDeckId] = useState(initial?.deckId ?? defaultDeckId ?? "");
   const [cardType, setCardType] = useState<Card["cardType"]>(initial?.cardType ?? "basic");
   const [front, setFront] = useState(initial?.front ?? "");
   const [back, setBack] = useState(initial?.back ?? "");
@@ -41,11 +41,10 @@ export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onC
 
   const [dictDefs, setDictDefs] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (decks.length && !deckId) setDeckId(decks[0].id);
-  }, [decks, deckId]);
+  // 牌組非同步載入完成前為空值 → 以「衍生值」代替 effect 內 setState
+  const activeDeckId = deckId || decks[0]?.id || "";
 
-  const targetLang = decks.find(d => d.id === deckId)?.lang ?? loadSettings().targetLang;
+  const targetLang = decks.find(d => d.id === activeDeckId)?.lang ?? loadSettings().targetLang;
   const sourceLang = loadSettings().sourceLang;
 
   async function autoTranslate() {
@@ -115,14 +114,14 @@ export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onC
   }
 
   async function save() {
-    if (!deckId || !front.trim() || !back.trim()) return;
+    if (!activeDeckId || !front.trim() || !back.trim()) return;
     setSaving(true);
     const now = Date.now();
     const card: Card = {
       id: initial?.id ?? crypto.randomUUID(),
       userId: initial?.userId,
-      deckId,
-      lang: initial?.lang ?? decks.find(d => d.id === deckId)?.lang ?? "es",
+      deckId: activeDeckId,
+      lang: initial?.lang ?? decks.find(d => d.id === activeDeckId)?.lang ?? "es",
       cardType,
       front: front.trim(),
       back: back.trim(),
@@ -166,7 +165,7 @@ export default function CardEditor({ decks, initial, defaultDeckId, onSaved, onC
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-bold text-[var(--text-muted)] mb-1 block">所屬牌組</label>
-              <select value={deckId} onChange={e => setDeckId(e.target.value)} className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-semibold bg-white">
+              <select value={activeDeckId} onChange={e => setDeckId(e.target.value)} className="w-full border-2 rounded-2xl px-3 py-2 text-sm font-semibold bg-white">
                 {decks.map(d => <option key={d.id} value={d.id}>{d.name} ({d.lang})</option>)}
               </select>
             </div>

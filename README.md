@@ -3,6 +3,12 @@
 > 通用、語言無關、離線優先的現代化外語學習系統。  
 > 結合 **FSRS-4.5 間隔複習**、**YouTube 沉浸式字幕擷取 Chrome 擴充**、**發音評測**、**個人學習計畫**與**記憶統計分析**。
 
+[![CI](https://github.com/Weichen5700/languagelearn/actions/workflows/ci.yml/badge.svg)](https://github.com/Weichen5700/languagelearn/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-88%20passed-brightgreen)
+
 ---
 
 ## 🌟 核心特色 (Key Features)
@@ -68,7 +74,7 @@
 ## 🚀 快速開始 (Getting Started)
 
 ### 1. 環境需求
-- Node.js 18.17+ 或更高版本
+- Node.js **20.9+**（Next.js 16 需求；建議 22 LTS）
 - npm / yarn / pnpm
 
 ### 2. 安裝相依套件與啟動網站
@@ -121,8 +127,11 @@ npm run dev
 # 啟動本機開發伺服器
 npm run dev
 
-# 執行全數單元測試 (Vitest: FSRS 演算法、資料合併、統計計算等)
+# 執行全數單元測試（Vitest：10 檔 / 88 項 — FSRS 演算法、複習佇列、擷取合併、統計聚合、本機 Store 等）
 npm test
+
+# ESLint 靜態檢查（目前 0 error / 0 warning）
+npm run lint
 
 # 執行 TypeScript 靜態型別檢查
 npm run check
@@ -130,12 +139,34 @@ npm run check
 # 建置生產環境版本 (Next.js Build)
 npm run build
 
-# 執行 Playwright 端對端 E2E 測試
+# 執行 Playwright 端對端 E2E 測試（首次需先安裝瀏覽器）
+npx playwright install --with-deps chromium   # 於 apps/web 目錄執行
 npm run e2e
 ```
+
+CI 由 GitHub Actions 執行（`.github/workflows/ci.yml`）：lint → typecheck → 單元測試 → build，
+另有一個 Playwright Chromium 的 E2E job。
+
+---
+
+## 📌 專案狀態 (Status)
+
+| 項目 | 狀態 |
+|---|---|
+| 功能（PLAN Phase 0–5） | ✅ 全部完成 |
+| 單元測試 | ✅ 88 項全通過（Vitest） |
+| 型別檢查 | ✅ `tsc --noEmit` 無錯誤 |
+| ESLint | ✅ 0 error / 0 warning |
+| 生產建置 | ✅ `next build` 18/18 頁面 |
+| CI | ✅ GitHub Actions（lint / typecheck / test / build / e2e） |
+| E2E | ⚠️ 本機需先安裝 Chromium（CI 會自動安裝） |
+| 雲端同步與帳號 | ⛔ 未實作（規劃中，見 `PLAN.md` 第十節） |
 
 ---
 
 ## 📄 授權協議 (License)
 
-本專案供個人學習與研究使用。
+**保留所有權利（All rights reserved）** — 本專案僅供個人學習、研究與非商業性參考使用，
+未經著作權人書面同意，不得複製、修改、散布或再授權。完整條文見 [`LICENSE`](./LICENSE)。
+
+本專案所使用之第三方套件（Next.js、React、Dexie、Zod 等）依其各自授權條款釋出，不在本授權範圍內。

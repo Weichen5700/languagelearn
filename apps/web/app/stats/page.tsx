@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { listCards, listLogs } from "@/lib/db";
 import { computeStats, formatDuration, type DayBucket, type StateDistribution } from "@/lib/stats/aggregate";
 import { exportAll, importAll } from "@/lib/io/importExport";
-import { loadProfile, renameProfile } from "@/lib/store/profile";
+import { renameProfile } from "@/lib/store/profile";
+import { useProfile } from "@/lib/store/hooks";
 
 const STATE_COLORS: Record<keyof StateDistribution, string> = {
   new: "bg-gray-400",
@@ -29,7 +30,9 @@ function heatColor(count: number): string {
 
 export default function StatsPage() {
   const [stats, setStats] = useState<ReturnType<typeof computeStats> | null>(null);
-  const [profileName, setProfileName] = useState("");
+  const profile = useProfile();
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const profileName = nameDraft ?? profile?.name ?? "我";
   const [editingName, setEditingName] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -39,8 +42,12 @@ export default function StatsPage() {
   }
 
   useEffect(() => {
-    refresh();
-    setProfileName(loadProfile()?.name ?? "我");
+    let cancelled = false;
+    void (async () => {
+      const [cards, logs] = await Promise.all([listCards(), listLogs()]);
+      if (!cancelled) setStats(computeStats(cards, logs));
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   async function onExport() {
@@ -65,6 +72,7 @@ export default function StatsPage() {
 
   function saveName() {
     renameProfile(profileName.trim() || "我");
+    setNameDraft(null);
     setEditingName(false);
   }
 
@@ -91,7 +99,7 @@ export default function StatsPage() {
           <p className="text-[var(--text-muted)] text-sm">
             {editingName ? (
               <>
-                <input value={profileName} onChange={e => setProfileName(e.target.value)} className="border-2 rounded-2xl px-2 py-0.5 text-sm" autoFocus />
+                <input value={profileName} onChange={e => setNameDraft(e.target.value)} className="border-2 rounded-2xl px-2 py-0.5 text-sm" autoFocus />
                 <button onClick={saveName} className="btn btn-primary ml-2 px-2 py-0.5 text-sm">儲存</button>
               </>
             ) : (

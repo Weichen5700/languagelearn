@@ -28,7 +28,17 @@ export default function PlansPage() {
     setDecks(ds);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [ps, cs, ds] = await Promise.all([listPlans(), listCards(), listDecks()]);
+      if (cancelled) return;
+      setPlans(ps.sort((a, b) => a.startDate - b.startDate));
+      setCards(cs);
+      setDecks(ds);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function startTodayReview() {
     // 聚合所有進行中計畫的今日卡片
@@ -62,9 +72,12 @@ export default function PlansPage() {
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Link href="/cards/review" className="btn btn-primary px-5 text-sm">
-            📅 今日任務複習
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={startTodayReview} className="btn btn-primary px-5 text-sm">
+            ▶ 今日計畫複習
+          </button>
+          <Link href="/cards/review" className="btn btn-ghost px-4 text-sm">
+            📅 全部到期複習
           </Link>
           <button onClick={() => setShowNew(true)} className="btn btn-blue px-4 text-sm">
             + 新增計畫
@@ -481,7 +494,7 @@ function TodayReview({ cards, onExit }: { cards: Card[]; onExit: () => void }) {
             <div className="text-2xl font-black text-[var(--brand-dark)]">{current.back}</div>
             {current.example && (
               <div className="text-xs italic text-[var(--text-muted)] mt-2 bg-gray-50 p-2 rounded-xl">
-                "{current.example}"
+                &quot;{current.example}&quot;
               </div>
             )}
             <div className="text-xs text-[var(--text-muted)] pt-2">點擊翻回正面</div>

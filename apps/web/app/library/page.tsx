@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listCards, listDecks, getImageBlob, type ImageBlobRow } from "@/lib/db";
-import type { Card, Deck } from "@/lib/schemas";
+import { listCards, getImageBlob, type ImageBlobRow } from "@/lib/db";
+import type { Card } from "@/lib/schemas";
 import { playTts, defaultVoiceFor } from "@/lib/audio/tts";
 
 interface Visit {
@@ -32,7 +32,6 @@ function timeAgo(ts: number): string {
 
 export default function LibraryPage() {
   const [cards, setCards] = useState<Card[]>([]);
-  const [decks, setDecks] = useState<Deck[]>([]);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [filterVideo, setFilterVideo] = useState<string | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
@@ -40,18 +39,22 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  async function refresh() {
-    const [cs, ds] = await Promise.all([listCards(), listDecks()]);
-    setCards(cs);
-    setDecks(ds);
-    try {
-      const res = await fetch("/api/visit");
-      const data = await res.json() as { visits: Visit[] };
-      setVisits(data.visits ?? []);
-    } catch { setVisits([]); }
-  }
-
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const cs = await listCards();
+      if (cancelled) return;
+      setCards(cs);
+      try {
+        const res = await fetch("/api/visit");
+        const data = await res.json() as { visits: Visit[] };
+        if (!cancelled) setVisits(data.visits ?? []);
+      } catch {
+        if (!cancelled) setVisits([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // 沉浸卡（highlight）依 videoId 分組
   const immersion = useMemo(() => cards.filter(c => c.cardType === "immersion"), [cards]);
@@ -94,7 +97,10 @@ export default function LibraryPage() {
     }
   }
 
-  const baseCards = filterVideo ? (byVideo.get(filterVideo) ?? []) : immersion;
+  const baseCards = useMemo(
+    () => (filterVideo ? (byVideo.get(filterVideo) ?? []) : immersion),
+    [filterVideo, byVideo, immersion]
+  );
 
   const videoCards = useMemo(() => {
     if (!searchQuery.trim()) return baseCards;
@@ -159,6 +165,7 @@ export default function LibraryPage() {
                       : "border-[var(--border)] hover:border-gray-400 bg-white"
                   }`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- YouTube 縮圖 CDN，此處為 lazy 縮圖牆無 LCP 影響 */}
                   <img src={thumb(v.videoId)} alt={v.title ?? v.videoId} className="w-full aspect-video object-cover" loading="lazy" />
                   <div className="p-2.5">
                     <div className="text-xs font-bold line-clamp-2 leading-tight">{v.title ?? v.videoId}</div>
@@ -225,6 +232,7 @@ export default function LibraryPage() {
             {videoCards.map(c => (
               <div key={c.id} className="card p-4 flex flex-col sm:flex-row gap-3 hover:border-gray-300 transition-all animate-pop">
                 {thumbs[c.id] ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- IndexedDB blob: objectURL，next/image 無法最佳化
                   <img
                     src={thumbs[c.id]}
                     alt="截圖（點擊放大）"
@@ -270,8 +278,8 @@ export default function LibraryPage() {
 
                   {c.example && (
                     <div className="mt-1.5 bg-gray-50/80 p-2 rounded-xl text-xs">
-                      <div className="italic text-gray-800">"{c.example}"</div>
-                      {c.exampleTranslation && <div className="text-gray-500 font-normal mt-0.5">"{c.exampleTranslation}"</div>}
+                      <div className="italic text-gray-800">&quot;{c.example}&quot;</div>
+                      {c.exampleTranslation && <div className="text-gray-500 font-normal mt-0.5">&quot;{c.exampleTranslation}&quot;</div>}
                     </div>
                   )}
 
@@ -305,6 +313,7 @@ export default function LibraryPage() {
           className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center p-6 z-50 cursor-zoom-out"
           onClick={() => setZoomImg(null)}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob: objectURL 放大檢視，next/image 無法最佳化 */}
           <img src={zoomImg} alt="放大截圖" className="max-w-[92vw] max-h-[88vh] rounded-2xl border border-white/20 shadow-2xl animate-pop" />
           <button
             onClick={() => setZoomImg(null)}

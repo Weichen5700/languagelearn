@@ -282,7 +282,11 @@ direction: ltr
 | 4 | 發音練習：錄音 + Web Speech ASR + Levenshtein 評分 | ✅ |
 | 5 | 統計：熱力圖 + 熟練度分布 + 每日時長 + 本機設定檔 + 備份 | ✅ |
 
-**測試**：57 個單元測試全通過（FSRS / 佇列 / TTS 快取 / 計畫進度 / 相似度 / 統計聚合）。
+**測試**：88 個單元測試全通過（FSRS / 佇列 / TTS 快取 / 計畫進度 / 相似度 / 統計聚合 / 本機 Store 契約）。
+
+**整備**：ESLint 0 error／0 warning、`tsc --noEmit` 無錯誤、`next build` 18/18 頁面、
+GitHub Actions CI（lint / typecheck / test / build / e2e）、`LICENSE`、
+`.env.local.example` 入庫（新 clone 可直接複製）。
 
 ### 雲端同步與帳號（未來工作）
 

@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# 環境變數範本需入庫，新 clone 才能照 README 複製
+!.env.local.example
+
+# playwright 產物（每次執行都會重建，不入庫）
+/test-results/
+/playwright-report/
 
 # vercel
 .vercel

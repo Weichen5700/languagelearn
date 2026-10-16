@@ -9,19 +9,20 @@ import {
   _resetForTest,
 } from "./staging";
 import { mergeCaptureToCard } from "./merge";
+import type { Card } from "@/lib/schemas";
 
 // vi.hoisted 讓 mock 與測試共享可變狀態（vi.mock 會被提升到檔案頂端）
 const holder = vi.hoisted(() => ({
-  savedCard: null as Record<string, any> | null,
+  savedCard: null as Card | null,
   imageStore: new Map<string, { id: string; mime: string; blob: { type: string }; createdAt: number }>(),
-  cards: [] as any[],
+  cards: [] as Card[],
 }));
 
 vi.mock("@/lib/db", () => ({
   listDecks: vi.fn(async () => []),
   createDeck: vi.fn(async () => {}),
   listCards: vi.fn(async () => holder.cards.slice()),
-  saveCard: vi.fn(async (c: any) => {
+  saveCard: vi.fn(async (c: Card) => {
     const i = holder.cards.findIndex(x => x.id === c.id);
     if (i >= 0) holder.cards[i] = c; else holder.cards.push(c);
     holder.savedCard = c;

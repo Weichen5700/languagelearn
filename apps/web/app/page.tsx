@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import TtsSpeedControl from "@/components/TtsSpeedControl";
 import { loadSettings } from "@/lib/store/settings";
-import { listCards, listLogs, listDecks, saveCard, type ImageBlobRow } from "@/lib/db";
+import { listCards, listLogs, listDecks, saveCard } from "@/lib/db";
 import { computeStats } from "@/lib/stats/aggregate";
 import { lookupWord, type DictResult } from "@/lib/audio/dictionary";
 import { makeNewCardSrs } from "@/lib/review/queue";
@@ -414,9 +414,9 @@ export default function Home() {
             {/* 字典例句 */}
             {dictEntry?.examples && dictEntry.examples.length > 0 && (
               <div className="mt-2 text-xs italic text-gray-600 bg-white/60 p-2 rounded-xl">
-                <div>例："{dictEntry.examples[0].text}"</div>
+                <div>例：&quot;{dictEntry.examples[0].text}&quot;</div>
                 {dictEntry.examples[0].translation && (
-                  <div className="text-gray-500">"{dictEntry.examples[0].translation}"</div>
+                  <div className="text-gray-500">&quot;{dictEntry.examples[0].translation}&quot;</div>
                 )}
               </div>
             )}

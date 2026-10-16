@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { loadSettings, saveSettings, type Settings } from "@/lib/store/settings";
+import { saveSettings } from "@/lib/store/settings";
+import { useSettings } from "@/lib/store/hooks";
 
 /**
  * TTS 語速控制：讀寫 settings.playbackRate（持久化）。
@@ -11,16 +11,11 @@ import { loadSettings, saveSettings, type Settings } from "@/lib/store/settings"
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75];
 
 export default function TtsSpeedControl({ compact = false }: { compact?: boolean }) {
-  const [rate, setRate] = useState<number>(1);
-
-  useEffect(() => {
-    setRate(loadSettings().playbackRate);
-  }, []);
+  const settings = useSettings();
+  const rate = settings.playbackRate;
 
   function set(r: number) {
-    setRate(r);
-    const s: Settings = { ...loadSettings(), playbackRate: r };
-    saveSettings(s);
+    saveSettings({ ...settings, playbackRate: r });
   }
 
   return (

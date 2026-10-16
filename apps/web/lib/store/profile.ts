@@ -21,6 +21,39 @@ export function loadProfile(): Profile | null {
 
 export function saveProfile(p: Profile): void {
   localStorage.setItem(KEY, JSON.stringify(p));
+  emit();
+}
+
+/* ---------- React 訂閱（供 useSyncExternalStore 使用） ---------- */
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+export function subscribeProfile(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+function emit(): void {
+  for (const listener of listeners) listener();
+}
+
+let cachedRaw: string | null = null;
+let cached: Profile | null = null;
+let cachedReady = false;
+
+export function getProfileSnapshot(): Profile | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(KEY);
+  if (cachedReady && raw === cachedRaw) return cached;
+  cachedReady = true;
+  cachedRaw = raw;
+  try { cached = raw ? JSON.parse(raw) : null; } catch { cached = null; }
+  return cached;
+}
+
+export function getServerProfileSnapshot(): Profile | null {
+  return null;
 }
 
 export function ensureProfile(name = "我"): Profile {

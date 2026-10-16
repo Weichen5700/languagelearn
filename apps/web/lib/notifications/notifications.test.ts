@@ -8,9 +8,11 @@ vi.stubGlobal("localStorage", {
   removeItem: (k: string) => { store.delete(k); },
 });
 let perm: NotificationPermission = "default";
-const NotificationStub: any = vi.fn(function (this: any) { this.onclick = null; });
+const NotificationStub = Object.assign(
+  vi.fn(function (this: { onclick: (() => void) | null }) { this.onclick = null; }),
+  { requestPermission: vi.fn(async () => (perm = "granted") as NotificationPermission) }
+);
 Object.defineProperty(NotificationStub, "permission", { get: () => perm });
-NotificationStub.requestPermission = vi.fn(async () => (perm = "granted"));
 vi.stubGlobal("Notification", NotificationStub);
 
 vi.stubGlobal("window", {

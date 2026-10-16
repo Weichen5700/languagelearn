@@ -1,16 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadSettings, saveSettings, type Settings } from "@/lib/store/settings";
+import { getSettingsSnapshot, saveSettings } from "@/lib/store/settings";
+import { useSettings } from "@/lib/store/hooks";
 
 /**
  * YouTube 重看播放器：用 IFrame Player API 控制，可調語速（setPlaybackRate）。
  * 用於沉浸卡「重看這句」——比純 iframe 多了語速控制，符合外語學習需求。
  */
 
+// 只宣告用到的 IFrame API 成員，避免 any
+interface YTPlayerLike {
+  getAvailablePlaybackRates?(): number[];
+  setPlaybackRate?(rate: number): void;
+  getCurrentTime?(): number;
+  seekTo?(seconds: number, allowSeekAhead: boolean): void;
+  playVideo?(): void;
+  destroy?(): void;
+}
+
 declare global {
   interface Window {
-    YT?: any;
+    YT?: { Player: new (el: HTMLElement, options: Record<string, unknown>) => YTPlayerLike };
     onYouTubeIframeAPIReady?: () => void;
   }
 }
@@ -40,22 +51,22 @@ interface Props {
 
 export default function YouTubePlayer({ videoId, startSec, endSec }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const playerRef = useRef<any>(null);
-  const [rate, setRate] = useState<number>(1);
+  const playerRef = useRef<YTPlayerLike | null>(null);
+  const settings = useSettings();
+  const rate = settings.ytRate;
   const [available, setAvailable] = useState<number[]>(COMMON_RATES);
   const [ready, setReady] = useState(false);
   const [looping, setLooping] = useState(false);
   const loopRef = useRef<{ start: number; end: number; timer: number | null } | null>(null);
-
-  useEffect(() => { setRate(loadSettings().ytRate); }, []);
 
   const loopEnd = endSec ?? startSec + 6;
 
   useEffect(() => {
     let cancelled = false;
     loadApi().then(() => {
-      if (cancelled || !hostRef.current || !window.YT?.Player) return;
-      playerRef.current = new window.YT.Player(hostRef.current, {
+      const YT = window.YT;
+      if (cancelled || !hostRef.current || !YT?.Player) return;
+      playerRef.current = new YT.Player(hostRef.current, {
         videoId,
         playerVars: {
           start: Math.max(0, Math.floor(startSec)),
@@ -69,13 +80,11 @@ export default function YouTubePlayer({ videoId, startSec, endSec }: Props) {
             if (cancelled) return;
             setReady(true);
             try {
-              const rates = playerRef.current.getAvailablePlaybackRates() as number[];
+              const rates = playerRef.current?.getAvailablePlaybackRates?.();
               if (rates?.length) setAvailable(rates);
             } catch { /* use COMMON_RATES */ }
             try {
-              const target = loadSettings().ytRate;
-              playerRef.current.setPlaybackRate(target);
-              setRate(target);
+              playerRef.current?.setPlaybackRate?.(getSettingsSnapshot().ytRate);
             } catch { /* ignore */ }
           },
         },
@@ -89,8 +98,7 @@ export default function YouTubePlayer({ videoId, startSec, endSec }: Props) {
   }, [videoId, startSec]);
 
   function setRateAndSave(r: number) {
-    setRate(r);
-    saveSettings({ ...loadSettings(), ytRate: r } as Settings);
+    saveSettings({ ...settings, ytRate: r });
     try { playerRef.current?.setPlaybackRate?.(r); } catch { /* not ready */ }
   }
 
@@ -121,7 +129,7 @@ export default function YouTubePlayer({ videoId, startSec, endSec }: Props) {
     stopLoopTimer();
     const timer = window.setInterval(tick, 500);
     loopRef.current = { start, end, timer };
-    try { playerRef.current.seekTo?.(start, true); playerRef.current.playVideo?.(); } catch {}
+    try { playerRef.current?.seekTo?.(start, true); playerRef.current?.playVideo?.(); } catch {}
   }
 
   useEffect(() => () => stopLoopTimer(), []);
