@@ -6,6 +6,7 @@ import {
   listAll,
   markImported,
   clearImported,
+  isStagingPersistent,
 } from "@/lib/capture/staging";
 
 export const runtime = "nodejs";
@@ -32,13 +33,14 @@ export async function POST(req: NextRequest) {
     return cors(NextResponse.json({ error: parsed.error.flatten() }, { status: 400 }));
   }
   const result = addCapture(parsed.data);
-  return cors(NextResponse.json(result, { status: result.duplicate ? 200 : 201 }));
+  // persistent=false 表示此環境無法落地成檔案（唯讀 FS），只在記憶體暫存
+  return cors(NextResponse.json({ ...result, persistent: isStagingPersistent() }, { status: result.duplicate ? 200 : 201 }));
 }
 
 export async function GET(req: NextRequest) {
   const all = req.nextUrl.searchParams.get("all") === "1";
   const list = all ? listAll() : listPending();
-  return cors(NextResponse.json({ entries: list }));
+  return cors(NextResponse.json({ entries: list, persistent: isStagingPersistent() }));
 }
 
 /** PATCH /api/capture?id=xxx（網站合併進 IndexedDB 後標 imported） */

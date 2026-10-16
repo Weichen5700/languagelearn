@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "icons": "node scripts/gen-extension-icons.mjs",
+    "shots": "node scripts/capture-screenshots.mjs",
     "check": "tsc --noEmit"
   },
   "dependencies": {

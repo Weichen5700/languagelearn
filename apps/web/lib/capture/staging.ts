@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
+import { CAPTURE_DIR, captureDirWritable } from "./fsStore";
 
 /**
  * Capture staging：Chrome 擴充在 youtube.com 點字幕擷取的單字，先存本地檔案，
@@ -32,12 +33,23 @@ export const CaptureEntrySchema = z.object({
 });
 export type CaptureEntry = z.infer<typeof CaptureEntrySchema>;
 
-// 專案根 data/capture/（apps/web 上一層兩層 = repo 根）
-const STORE_DIR = join(process.cwd(), "..", "..", "data", "capture");
+// 專案根 data/capture/（可用 CAPTURE_STORE_DIR 覆寫；唯讀環境走記憶體後備）
+const STORE_DIR = CAPTURE_DIR;
 const STORE_FILE = join(STORE_DIR, "staging.json");
 
 export const captureBus = new EventEmitter();
 captureBus.setMaxListeners(50);
+
+/**
+ * 唯讀檔案系統（Vercel 等 serverless）時的記憶體後備。
+ * 站內擷取合併流程仍可運作，但執行環境重啟後暫存內容會消失。
+ */
+let memory: CaptureEntry[] | null = null;
+
+/** 目前是否真的落地成檔案（false = 只在記憶體，重啟即失）。 */
+export function isStagingPersistent(): boolean {
+  return memory === null && captureDirWritable();
+}
 
 function ensureStore(): void {
   if (!existsSync(STORE_DIR)) mkdirSync(STORE_DIR, { recursive: true });
@@ -45,9 +57,11 @@ function ensureStore(): void {
 }
 
 function loadAll(): CaptureEntry[] {
-  ensureStore();
-  const raw = readFileSync(STORE_FILE, "utf8");
+  if (memory) return memory;
+  if (!captureDirWritable()) { memory = []; return memory; }
   try {
+    ensureStore();
+    const raw = readFileSync(STORE_FILE, "utf8");
     return z.array(CaptureEntrySchema).parse(JSON.parse(raw));
   } catch {
     return [];
@@ -55,8 +69,13 @@ function loadAll(): CaptureEntry[] {
 }
 
 function persistAll(entries: CaptureEntry[]): void {
-  ensureStore();
-  writeFileSync(STORE_FILE, JSON.stringify(entries, null, 2), "utf8");
+  if (memory || !captureDirWritable()) { memory = entries; return; }
+  try {
+    ensureStore();
+    writeFileSync(STORE_FILE, JSON.stringify(entries, null, 2), "utf8");
+  } catch {
+    memory = entries;
+  }
 }
 
 export function dedupKey(word: string, sentence: string, lang: string): string {
@@ -146,6 +165,7 @@ export function clearImported(): number {
 }
 
 export function _resetForTest(): void {
+  memory = null;
   ensureStore();
   writeFileSync(STORE_FILE, "[]", "utf8");
   captureBus.removeAllListeners("capture");

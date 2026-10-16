@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateVisitBody, recordVisit, listVisits } from "@/lib/capture/visits";
+import { validateVisitBody, recordVisit, listVisits, isVisitsPersistent } from "@/lib/capture/visits";
 
 export const runtime = "nodejs";
 const ORIGIN = "*";
@@ -21,9 +21,9 @@ export async function POST(req: NextRequest) {
   catch { return cors(NextResponse.json({ error: "invalid json" }, { status: 400 })); }
   const parsed = validateVisitBody(body);
   if (!parsed.success) return cors(NextResponse.json({ error: parsed.error.flatten() }, { status: 400 }));
-  return cors(NextResponse.json({ visit: recordVisit(parsed.data) }, { status: 201 }));
+  return cors(NextResponse.json({ visit: recordVisit(parsed.data), persistent: isVisitsPersistent() }, { status: 201 }));
 }
 
 export async function GET() {
-  return cors(NextResponse.json({ visits: listVisits() }));
+  return cors(NextResponse.json({ visits: listVisits(), persistent: isVisitsPersistent() }));
 }

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- 品牌色底：圓角方形（與網站 brand 色 #58cc02 一致） -->
+  <rect width="128" height="128" rx="30" fill="#58cc02"/>
+  <!-- 耳羽 -->
+  <path d="M38 40 L46 20 L60 32 Z" fill="#ffffff"/>
+  <path d="M90 40 L82 20 L68 32 Z" fill="#ffffff"/>
+  <!-- 貓頭鷹頭（白） -->
+  <circle cx="64" cy="70" r="42" fill="#ffffff"/>
+  <!-- 眼睛 -->
+  <circle cx="48" cy="62" r="15" fill="#1f3311"/>
+  <circle cx="80" cy="62" r="15" fill="#1f3311"/>
+  <circle cx="52" cy="57" r="4.5" fill="#ffffff"/>
+  <circle cx="84" cy="57" r="4.5" fill="#ffffff"/>
+  <!-- 喙（品牌橘） -->
+  <path d="M64 76 L54 90 L74 90 Z" fill="#ff9600"/>
+</svg>

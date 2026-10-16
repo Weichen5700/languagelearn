@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { listKeyStatuses, setKey, deleteKey } from "@/lib/keys/store";
+import {
+  listKeyStatuses,
+  setKey,
+  deleteKey,
+  isStoreWritable,
+  KeyStoreReadOnlyError,
+} from "@/lib/keys/store";
 
 export const runtime = "nodejs";
 
 /**
  * API Key 託管介面：
- * - GET：回傳遮罩清單（set / source），永不回傳明文。
+ * - GET：回傳遮罩清單（set / source）與 store 是否可寫，永不回傳明文。
  * - POST：設定某個 key（body: { name, value }）。
  * - DELETE：刪除某個 key（body: { name }）。
  *
- * 僅本機單使用者；host_permissions 限 localhost，不開外網。
+ * 本機單使用者；host_permissions 限 localhost，不開外網。
+ * 唯讀檔案系統（Vercel 等）無法站內保存 → 409 並提示改用環境變數。
  */
 export async function GET() {
-  return NextResponse.json({ keys: listKeyStatuses() });
+  return NextResponse.json({ keys: listKeyStatuses(), writable: isStoreWritable() });
 }
 
 const PostSchema = z.object({
@@ -32,6 +39,9 @@ export async function POST(req: NextRequest) {
     setKey(parsed.data.name, parsed.data.value);
     return NextResponse.json({ ok: true, keys: listKeyStatuses() });
   } catch (err) {
+    if (err instanceof KeyStoreReadOnlyError) {
+      return NextResponse.json({ error: err.message, writable: false }, { status: 409 });
+    }
     const msg = err instanceof Error ? err.message : "save failed";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
@@ -50,6 +60,9 @@ export async function DELETE(req: NextRequest) {
     deleteKey(parsed.data.name);
     return NextResponse.json({ ok: true, keys: listKeyStatuses() });
   } catch (err) {
+    if (err instanceof KeyStoreReadOnlyError) {
+      return NextResponse.json({ error: err.message, writable: false }, { status: 409 });
+    }
     const msg = err instanceof Error ? err.message : "delete failed";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

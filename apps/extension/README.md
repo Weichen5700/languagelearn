@@ -62,5 +62,30 @@ popup 內「立即補傳暫存」可手動觸發。
 | `src/content.js` | YouTube 字幕解析 + 點擊擷取 + 離線暫存 |
 | `src/content.css` | word span / 模糊字幕 / 側欄 / 對話框樣式 |
 | `src/popup.html` / `popup.js` | 設定與補傳介面 |
+| `icons/icon.svg` | 圖示原始檔（貓頭鷹，品牌色 `#58cc02`） |
+| `icons/icon{16,32,48,128}.png` | 上架用圖示（由 `icon.svg` 產生） |
 
-> 本機單使用者，`host_permissions` 僅開 `localhost` / `127.0.0.1`，不外連。
+## 圖示
+
+圖示由向量原稿 `icons/icon.svg` 產生，改圖後重新產生：
+
+```bash
+cd apps/web && npm run icons   # 需要 sharp（npm ci 已含）
+```
+
+`manifest.json` 的 `icons` 與 `action.default_icon` 皆指向這 4 個尺寸。
+
+## 指向部署站（非本機）
+
+1. 擴充設定頁把「本機網址」改成部署網址（例如 `https://your-app.vercel.app`）
+2. `manifest.json` 的 `host_permissions` 加入該網域：
+   ```json
+   "host_permissions": [
+     "http://localhost/*",
+     "http://127.0.0.1/*",
+     "https://your-app.vercel.app/*"
+   ]
+   ```
+3. `chrome://extensions` → 重新載入擴充
+
+> 預設僅開 `localhost` / `127.0.0.1`，不外連；自行加上的網域請確認是信任的自架站。

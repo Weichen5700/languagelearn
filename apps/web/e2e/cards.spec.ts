@@ -33,9 +33,16 @@ test("單字卡完整流程", async ({ page }) => {
   await page.keyboard.press("Space");
   await expect(page.getByText("你好", { exact: true }).first()).toBeVisible();
 
-  // 6. 評分 Good（3）
-  await page.keyboard.press("3");
+  // 6~7. 逐張評分「良好」（3），直到今日佇列清空。
+  //      若本機或其他測試留下的資料讓佇列不只一張卡，這裡仍能跑完。
+  for (let i = 0; i < 30; i++) {
+    if (await page.getByText("今日複習完成！").isVisible().catch(() => false)) break;
+    await page.keyboard.press("3");
+    await page.waitForTimeout(250);
+    if (await page.getByText("今日複習完成！").isVisible().catch(() => false)) break;
+    await page.keyboard.press("Space"); // 下一張需先翻面才能評分
+    await page.waitForTimeout(250);
+  }
 
-  // 7. 只有一張卡 → 進入完成畫面
   await expect(page.getByText("今日複習完成！")).toBeVisible({ timeout: 5000 });
 });

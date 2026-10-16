@@ -7,7 +7,20 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=nextdotjs)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-88%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-96%20passed-brightgreen)
+
+---
+
+## 📸 畫面預覽 (Screenshots)
+
+| 首頁 | 單字卡中心 |
+|:---:|:---:|
+| ![首頁](docs/screenshots/home.png) | ![單字卡中心](docs/screenshots/cards.png) |
+| **FSRS 複習（翻面評分）** | **YouTube 影片知識庫** |
+| ![複習](docs/screenshots/review-answer.png) | ![影片知識庫](docs/screenshots/library.png) |
+
+> 其餘畫面（學習計畫、發音評測、統計、設定）在 [`docs/screenshots/`](docs/screenshots/)。
+> 需要重新產生時：先 `npm run dev`，另開終端機執行 `npm run shots`（Playwright 會即時建立示範資料後截圖）。
 
 ---
 
@@ -119,6 +132,42 @@ npm run dev
 
 ---
 
+## 🌐 部署與分享 (Deploy)
+
+### 情境 A：自架 / VPS（功能最完整，建議）
+```bash
+npm run install:web
+npm run build
+cp apps/web/.env.local.example apps/web/.env.local   # 選用：填入 GOOGLE_API_KEY
+npm run start                                        # http://localhost:3000
+```
+- API Key 可在 `/settings` 貼入（AES-256-GCM 加密存於 `data/.keys/`），或用環境變數
+- 擷取暫存寫入 `data/capture/`，可用 `CAPTURE_STORE_DIR` 指向 Docker volume 等持久位置
+
+### 情境 B：Vercel（最快取得線上 demo）
+1. Vercel → **Add New Project** → 選擇此 repo
+2. **Root Directory 設為 `apps/web`**（monorepo 必要）
+3. Environment Variables 加入 `GOOGLE_API_KEY`（選用；無 Key 會降級免費服務）
+4. Deploy
+
+> ⚠️ serverless 檔案系統唯讀、且每次冷啟動都是新容器，因此：
+> - `/settings` 的 **Key 託管無法保存**（`/api/keys` 會回 `409` 並在畫面顯示指引）→ 請改用環境變數，清單會標示來源為 `env`
+> - 擷取暫存僅存在單一實例的記憶體（API 回傳 `persistent: false`），重新部署即清空
+
+### 讓 Chrome 擴充指向部署站
+1. 擴充設定頁把「本機網址」改成部署網址（例如 `https://your-app.vercel.app`）
+2. `apps/extension/manifest.json` 的 `host_permissions` 加入該網域後重新載入擴充：
+   ```json
+   "host_permissions": [
+     "http://localhost/*",
+     "http://127.0.0.1/*",
+     "https://your-app.vercel.app/*"
+   ]
+   ```
+3. API 已開 CORS（`Access-Control-Allow-Origin: *`），部署站可直接被擴充呼叫
+
+---
+
 ## 🧪 測試與驗證 (Scripts)
 
 在根目錄可直接使用以下指令：
@@ -127,7 +176,7 @@ npm run dev
 # 啟動本機開發伺服器
 npm run dev
 
-# 執行全數單元測試（Vitest：10 檔 / 88 項 — FSRS 演算法、複習佇列、擷取合併、統計聚合、本機 Store 等）
+# 執行全數單元測試（Vitest：12 檔 / 96 項 — FSRS 演算法、複習佇列、擷取合併、統計聚合、本機 Store、唯讀 FS 後備等）
 npm test
 
 # ESLint 靜態檢查（目前 0 error / 0 warning）
@@ -142,6 +191,12 @@ npm run build
 # 執行 Playwright 端對端 E2E 測試（首次需先安裝瀏覽器）
 npx playwright install --with-deps chromium   # 於 apps/web 目錄執行
 npm run e2e
+
+# 重新產生 README 截圖（需先啟動 dev server；於 apps/web 目錄執行）
+npm run shots
+
+# 由 icons/icon.svg 重新產生 Chrome 擴充圖示（於 apps/web 目錄執行）
+npm run icons
 ```
 
 CI 由 GitHub Actions 執行（`.github/workflows/ci.yml`）：lint → typecheck → 單元測試 → build，
@@ -154,12 +209,14 @@ CI 由 GitHub Actions 執行（`.github/workflows/ci.yml`）：lint → typechec
 | 項目 | 狀態 |
 |---|---|
 | 功能（PLAN Phase 0–5） | ✅ 全部完成 |
-| 單元測試 | ✅ 88 項全通過（Vitest） |
+| 單元測試 | ✅ 96 項全通過（Vitest） |
 | 型別檢查 | ✅ `tsc --noEmit` 無錯誤 |
 | ESLint | ✅ 0 error / 0 warning |
 | 生產建置 | ✅ `next build` 18/18 頁面 |
 | CI | ✅ GitHub Actions（lint / typecheck / test / build / e2e） |
 | E2E | ⚠️ 本機需先安裝 Chromium（CI 會自動安裝） |
+| 部署 | ✅ 自架（`build` + `start`）；Vercel 見「部署與分享」章節 |
+| 擴充發佈 | ✅ 圖示（16/32/48/128）已備，可打包上架 |
 | 雲端同步與帳號 | ⛔ 未實作（規劃中，見 `PLAN.md` 第十節） |
 
 ---

@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
+import { canWriteDir } from "@/lib/fsWritable";
 
 /**
  * 後端 API Key 託管：使用者在網站 UI 貼上的 Key 以 AES-256-GCM 加密存於本機檔案，
@@ -14,9 +15,37 @@ import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
  * 防的是誤入庫 / 误拷貝，而非防本機 root。真要更高安全可改為使用者主密碼衍生。
  */
 
-const STORE_DIR = join(process.cwd(), "..", "..", "data", ".keys");
+const STORE_DIR = process.env.KEYS_STORE_DIR ?? join(process.cwd(), "..", "..", "data", ".keys");
 const MASTER_FILE = join(STORE_DIR, "master.key");
 const KEYS_FILE = join(STORE_DIR, "keys.enc");
+
+let writable: boolean | null = null;
+
+/**
+ * 檔案系統是否可寫。Vercel 等 serverless 為唯讀（且每次冷啟動都是新容器），
+ * 站內保存的密文會失效，因此改為要求使用環境變數設定 Key。
+ */
+export function isStoreWritable(): boolean {
+  if (writable === null) {
+    writable = canWriteDir(STORE_DIR);
+  }
+  return writable;
+}
+
+/** 唯讀環境下嘗試站內儲存 Key 時拋出（API 轉成 409 + 明確指引）。 */
+export class KeyStoreReadOnlyError extends Error {
+  constructor() {
+    super(
+      "此執行環境的檔案系統為唯讀（例如 Vercel / serverless），無法在站內保存 API Key。" +
+      "請改用環境變數設定（GOOGLE_API_KEY 等），設定後重新部署。"
+    );
+    this.name = "KeyStoreReadOnlyError";
+  }
+}
+
+function assertWritable(): void {
+  if (!isStoreWritable()) throw new KeyStoreReadOnlyError();
+}
 
 /** 已知 Key 清單（UI 顯示用 meta）。未列在這也可透過 store 存取。 */
 export interface KeyMeta {
@@ -109,8 +138,9 @@ export function getKey(name: string): string | null {
   return env && env.length > 0 ? env : null;
 }
 
-/** 設定 / 刪除 Key（value 為空字串則刪除）。 */
+/** 設定 / 刪除 Key（value 為空字串則刪除）。唯讀環境會拋 KeyStoreReadOnlyError。 */
 export function setKey(name: string, value: string): void {
+  assertWritable();
   const store = loadStore();
   const v = value.trim();
   if (v.length === 0) {
@@ -122,6 +152,7 @@ export function setKey(name: string, value: string): void {
 }
 
 export function deleteKey(name: string): void {
+  assertWritable();
   const store = loadStore();
   delete store[name];
   saveStore(store);

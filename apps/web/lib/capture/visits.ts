@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { CAPTURE_DIR, captureDirWritable } from "./fsStore";
 
 /**
  * 影片瀏覽紀錄：擴充在 youtube.com/watch 開頁時 ping 一次，供「最近瀏覽影片」知識庫視圖。
@@ -17,8 +18,15 @@ export const VisitSchema = z.object({
 });
 export type Visit = z.infer<typeof VisitSchema>;
 
-const STORE_DIR = join(process.cwd(), "..", "..", "data", "capture");
+const STORE_DIR = CAPTURE_DIR;
 const STORE_FILE = join(STORE_DIR, "visits.json");
+
+/** 唯讀檔案系統（serverless）時的記憶體後備，避免整個 API 500。 */
+let memory: Visit[] | null = null;
+
+export function isVisitsPersistent(): boolean {
+  return memory === null && captureDirWritable();
+}
 
 function ensure(): void {
   if (!existsSync(STORE_DIR)) mkdirSync(STORE_DIR, { recursive: true });
@@ -26,12 +34,21 @@ function ensure(): void {
 }
 
 function load(): Visit[] {
-  ensure();
-  try { return z.array(VisitSchema).parse(JSON.parse(readFileSync(STORE_FILE, "utf8"))); }
-  catch { return []; }
+  if (memory) return memory;
+  if (!captureDirWritable()) { memory = []; return memory; }
+  try {
+    ensure();
+    return z.array(VisitSchema).parse(JSON.parse(readFileSync(STORE_FILE, "utf8")));
+  } catch { return []; }
 }
 
-function save(v: Visit[]): void { ensure(); writeFileSync(STORE_FILE, JSON.stringify(v, null, 2), "utf8"); }
+function save(v: Visit[]): void {
+  if (memory || !captureDirWritable()) { memory = v; return; }
+  try {
+    ensure();
+    writeFileSync(STORE_FILE, JSON.stringify(v, null, 2), "utf8");
+  } catch { memory = v; }
+}
 
 const BodySchema = z.object({
   videoId: z.string().min(1).max(100),
@@ -70,6 +87,7 @@ export function listVisits(): Visit[] {
 }
 
 export function _resetForTest(): void {
+  memory = null;
   ensure();
   writeFileSync(STORE_FILE, "[]", "utf8");
 }

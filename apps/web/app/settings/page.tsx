@@ -34,6 +34,8 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState<string>("");
   const [testResult, setTestResult] = useState("");
+  // 檔案系統可寫時才能站內保存 Key（Vercel 等 serverless 為唯讀）
+  const [keysWritable, setKeysWritable] = useState(true);
 
   // 學習偏好設定：以 localStorage 為來源，本地編輯先存 draft，按「儲存」才寫回
   const storeSettings = useSettings();
@@ -47,6 +49,7 @@ export default function SettingsPage() {
         const res = await fetch("/api/keys");
         const data = await res.json();
         setKeys(data.keys ?? []);
+        setKeysWritable(data.writable ?? true);
       } catch {
         // ignore
       }
@@ -267,6 +270,15 @@ export default function SettingsPage() {
           前端只顯示遮罩狀態，永遠不會外洩明文。YouTube 擴充套件的 hover 查詞與翻譯會直接調用這裡的本機站 Key，
           無須重複手動設定。
         </div>
+
+        {!keysWritable && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed">
+            <b>⚠️ 此環境無法站內保存 Key：</b>檔案系統為唯讀（例如 Vercel / serverless），
+            在此貼上的 Key 不會被保存。請改用<b>環境變數</b>設定，例如在 Vercel →
+            Settings → Environment Variables 加入 <code>GOOGLE_API_KEY</code> 後重新部署；
+            下方清單會顯示來源為 <b>env</b> 表示生效。
+          </div>
+        )}
 
         <div className="space-y-3.5">
           {keys.map((k) => (
